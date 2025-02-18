@@ -8,5 +8,7 @@ This will place a Watcher.exe in Watcher\Watcher\bin\debug directory. Open it.
 
 Follow the instructions in the cmd window. For brevity, these are:
 
+Select the mode you wish to use; 1 for the directory and file synchronisation, and 2 for reading the database.
+
 Copy the path to the directories you wish to use, first the source and then the destination. Just directly pasting the path from File Explorer should be perfect.
 
