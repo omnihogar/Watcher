@@ -4,7 +4,7 @@ using System.Data;
 using Microsoft.Data.Sqlite;
 using Dapper;
 
-class DirectorySync
+class Watcher
 {
     private static string sourceDir;
     private static string destinationDir;
