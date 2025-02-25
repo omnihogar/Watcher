@@ -3,6 +3,7 @@ using System.IO;
 using System.Data;
 using Microsoft.Data.Sqlite;
 using Dapper;
+using System.Text;
 
 class Watcher
 {
@@ -11,6 +12,27 @@ class Watcher
     private static string connectionString = "Data Source=sync_log.db";
 
     static void Main()
+    {
+        Console.WriteLine("1. Sync mode");
+        Console.WriteLine("2. Database mode");
+        Console.Write("Choose mode: ");
+        string mode = Console.ReadLine();
+        if (mode == "1")
+        {
+            SyncMode();
+        }
+        else if (mode == "2")
+        {
+            DatabaseMode();
+        }
+        else
+        {
+            Console.WriteLine("Invalid mode.");
+        }
+    }
+
+
+    static void SyncMode()
     {
         Console.WriteLine("Use this format: C:\\Users\\Documents\\source");
         Console.Write("Enter source directory:");
@@ -60,7 +82,7 @@ class Watcher
             File.Copy(filePath, destFilePath, true);
         }
     }
-
+    //
     private static void OnCreated(object sender, FileSystemEventArgs e)
     {
         string destPath = e.FullPath.Replace(sourceDir, destinationDir);
@@ -129,18 +151,24 @@ class Watcher
 
     //upisivanje promjena u bazu podataka
     private static void LogChange(string fileName, string action)
-{
+    {
         string extension = Path.GetExtension(fileName);
         long size = File.Exists(fileName) ? new FileInfo(fileName).Length : 0;
 
         using (var connection = new SqliteConnection(connectionString))
-    {
+        {
             connection.Open();
             string sql = "INSERT INTO FileChanges (FileName, Extension, Size, Action, Timestamp) VALUES (@FileName, @Extension, @Size, @Action, @Timestamp)";
             connection.Execute(sql, new { FileName = fileName, Extension = extension, Size = size, Action = action, Timestamp = DateTime.Now });
+        }
     }
-}
 
+    static void DatabaseMode()
+    {
+        Console.WriteLine("Database mode is currently under construction.");
 
+        Console.ReadKey();
+        
+    }
     
 }
