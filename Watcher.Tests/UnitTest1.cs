@@ -30,4 +30,3 @@ namespace Watcher.Tests
         }
     }
 }
-x
