@@ -4,10 +4,11 @@ using System.Data;
 using Microsoft.Data.Sqlite;
 using Dapper;
 using System.Text;
+using ExitException;
 
 namespace SyncMode
 {
-    public class Syncer()
+    public static class Syncer
     {
         private static string sourceDir;
         private static string destinationDir;
@@ -15,9 +16,17 @@ namespace SyncMode
 
         public static void SyncStart()
         {
-            Console.WriteLine("Use this format: C:\\Users\\Documents\\source");
+            Console.WriteLine("Synchronisation mode - synchronize files and directories.");
+            Console.WriteLine("Press m and enter to exit.");
+            Console.WriteLine("-----------------------------------");
 
-            // Source
+            if (Console.ReadLine().ToLower() == "m")
+            {
+                throw new ThrowExitException();
+            }
+
+            //Source
+            Console.WriteLine("Use this format: C:\\Users\\Documents\\source");
             Console.Write("Enter source directory: ");
             string input = Console.ReadLine();
             if (string.IsNullOrWhiteSpace(input))
@@ -67,7 +76,6 @@ namespace SyncMode
                 return;
             }
 
-
             Console.WriteLine("Starting directory synchronization...");
             EnsureDatabaseExists();
             SyncDirectories(sourceDir, destinationDir);
@@ -110,7 +118,7 @@ namespace SyncMode
         {
             string destPath = e.FullPath.Replace(sourceDir, destinationDir);
             File.Copy(e.FullPath, destPath, true);
-            LogChange(e.Name, "Created");
+            LogChange(e.FullPath, "Created"); // FIXED: Use FullPath instead of just Name
             Console.WriteLine($"Created: {e.FullPath}");
         }
 
@@ -126,7 +134,7 @@ namespace SyncMode
             {
                 File.Copy(e.FullPath, destPath, true);
             }
-            LogChange(e.Name, e.ChangeType.ToString());
+            LogChange(e.FullPath, e.ChangeType.ToString()); // FIXED: Use FullPath
             Console.WriteLine($"{e.ChangeType}: {e.FullPath}");
         }
 
@@ -142,7 +150,7 @@ namespace SyncMode
             {
                 File.Delete(destPath);
             }
-            LogChange(e.Name, "Deleted");
+            LogChange(e.FullPath, "Deleted"); // FIXED: Use FullPath
             Console.WriteLine($"Deleted: {e.FullPath}");
         }
 
@@ -160,7 +168,7 @@ namespace SyncMode
             {
                 File.Move(oldDestPath, newDestPath);
             }
-            LogChange(e.OldName, "Renamed to " + e.Name);
+            LogChange(e.OldFullPath, $"Renamed to {e.FullPath}"); // FIXED: Use FullPath
             Console.WriteLine($"Renamed: {e.OldFullPath} -> {e.FullPath}");
         }
 
@@ -176,16 +184,17 @@ namespace SyncMode
         }
 
         //upisivanje promjena u bazu podataka
-        private static void LogChange(string fileName, string action)
+        private static void LogChange(string filePath, string action) // FIXED: Changed parameter name to reflect actual path
         {
-            string extension = Path.GetExtension(fileName);
-            long size = File.Exists(fileName) ? new FileInfo(fileName).Length : 0;
+            string absolutePath = Path.GetFullPath(filePath);  // FIXED: Ensure absolute path is stored
+            string extension = Path.GetExtension(absolutePath);
+            long size = File.Exists(absolutePath) ? new FileInfo(absolutePath).Length : 0;
 
             using (var connection = new SqliteConnection(connectionString))
             {
                 connection.Open();
                 string sql = "INSERT INTO FileChanges (FileName, Extension, Size, Action, Timestamp) VALUES (@FileName, @Extension, @Size, @Action, @Timestamp)";
-                connection.Execute(sql, new { FileName = fileName, Extension = extension, Size = size, Action = action, Timestamp = DateTime.Now });
+                connection.Execute(sql, new { FileName = absolutePath, Extension = extension, Size = size, Action = action, Timestamp = DateTime.Now });
             }
         }
     }
